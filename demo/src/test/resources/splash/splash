@@ -1,0 +1,13 @@
+splash 512 288
+
+[background]
+image splash_${dpi}.png 0 0
+textfont DejaVuSans-Bold-min.ttf
+textsize 30
+fill 0 0 0
+textalign start
+filltext 395 110 ${version}
+
+[progress]
+image splash_pg0_${dpi}.png 0 0
+image splash_pg1_${dpi}.png 0 0 12+${progress}*489 273

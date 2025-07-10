@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>xyz.wismer.nativestart</groupId>
+		<artifactId>packer-parent</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>demo</artifactId>
+	<packaging>jar</packaging>
+
+	<name>demo-application</name>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-controls</artifactId>
+			<version>17.0.6</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-fxml</artifactId>
+			<version>17.0.6</version>
+		</dependency>
+
+		<dependency>
+			<groupId>xyz.wismer.nativestart</groupId>
+			<artifactId>packer</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<version>5.13.3</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.6.0</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>java</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<mainClass>xyz.wismer.nativestart.demo.DemoApp</mainClass>
+					<arguments><argument>2</argument></arguments>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<profiles>
+
+		<profile>
+			<id>linux</id>
+			<activation>
+				<os>
+					<name>linux</name>
+				</os>
+			</activation>
+			<properties>
+				<jdk.os>linux</jdk.os>
+				<jdk.moddir>jmods</jdk.moddir>
+				<jfx.os>linux</jfx.os>
+				<javafx.platform>linux</javafx.platform>
+			</properties>
+		</profile>
+		<profile>
+			<id>mac</id>
+			<activation>
+				<os>
+					<name>mac os x</name>
+				</os>
+			</activation>
+			<properties>
+				<jdk.os>mac</jdk.os>
+				<jdk.moddir>jmods</jdk.moddir>
+				<jfx.os>osx</jfx.os>
+				<javafx.platform>mac</javafx.platform>
+			</properties>
+		</profile>
+		<profile>
+			<id>windows</id>
+			<activation>
+				<os>
+					<family>windows</family>
+				</os>
+			</activation>
+			<properties>
+				<jdk.os>windows</jdk.os>
+				<jdk.moddir>jmods</jdk.moddir>
+				<jfx.os>windows</jfx.os>
+				<javafx.platform>win</javafx.platform>
+			</properties>
+		</profile>
+
+		<profile>
+			<id>itg-test</id>
+
+			<properties>
+				<jdk.version>17.0.6</jdk.version>
+				<jdk.version.postfix>+10</jdk.version.postfix>
+
+				<javafx.version>17.0.6</javafx.version>
+
+				<openjfx.download>https://download2.gluonhq.com/openjfx/${javafx.version}/openjfx-${javafx.version}_${jfx.os}-x64_bin-jmods.zip</openjfx.download>
+				<openjfx.subdir>javafx-jmods-${javafx.version}</openjfx.subdir>
+			</properties>
+
+			<build>
+				<plugins>
+					<!-- Step 1: Collect all JPMS module dependencies (here: OpenJFX only) -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-dependency-plugin</artifactId>
+						<version>3.1.1</version>
+						<executions>
+							<execution>
+								<id>copy-modules</id>
+								<phase>package</phase>
+								<goals>
+									<goal>copy-dependencies</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${project.build.directory}/jlink/mod</outputDirectory>
+									<includeScope>compile</includeScope>
+									<includeGroupIds>org.openjfx</includeGroupIds>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- Step 2: Create shaded JAR without modules (needed by jlink) -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-shade-plugin</artifactId>
+						<version>3.2.1</version>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>shade</goal>
+								</goals>
+								<configuration>
+									<artifactSet>
+										<excludes>
+											<exclude>org.openjfx:*</exclude>
+										</excludes>
+									</artifactSet>
+									<outputFile>${project.build.directory}/jlink/shaded.jar</outputFile>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- Step 3: Download OpenJFX SDK -->
+					<plugin>
+						<groupId>com.googlecode.maven-download-plugin</groupId>
+						<artifactId>download-maven-plugin</artifactId>
+						<version>1.4.1</version>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>wget</goal>
+								</goals>
+								<configuration>
+									<url>${openjfx.download}</url>
+									<unpack>true</unpack>
+									<outputDirectory>${project.build.directory}/jlink/jmod</outputDirectory>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- Step 4: Copy jmod files from OpenJFX SDK (needed by jlink) -->
+					<plugin>
+						<artifactId>maven-resources-plugin</artifactId>
+						<version>2.7</version>
+						<executions>
+							<execution>
+								<id>copy-jmods</id>
+								<phase>package</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+
+								<configuration>
+									<outputDirectory>${jlink.jdk.path}/${jdk.moddir}</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${project.build.directory}/jlink/jmod/${openjfx.subdir}/</directory>
+											<includes>
+												<include>*.jmod</include>
+											</includes>
+											<excludes>
+												<!-- exclude unused OpenJFX modules (manually defined) -->
+												<exclude>javafx.swing.jmod</exclude>
+												<exclude>javafx.media.jmod</exclude>
+												<exclude>javafx.web.jmod</exclude>
+											</excludes>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>com.igormaznitsa</groupId>
+						<artifactId>mvn-jlink-wrapper</artifactId>
+						<version>1.1.0</version>
+						<executions>
+							<execution>
+								<!-- Step 5: Download OpenJDK for current platform -->
+								<id>cache-jdk</id>
+								<goals>
+									<goal>cache-jdk</goal>
+								</goals>
+								<configuration>
+									<jdkPathProperty>jlink.jdk.path</jdkPathProperty>
+									<jdkCachePath>${settings.localRepository}/.cache/mvn-jlink-wrapper/</jdkCachePath>
+
+									<provider>ADOPT</provider>
+									<providerConfig>
+										<release>jdk-${jdk.version}${jdk.version.postfix}</release>
+										<arch>x64</arch>
+										<type>jdk</type>
+										<impl>hotspot</impl>
+										<os>${jdk.os}</os>
+									</providerConfig>
+								</configuration>
+							</execution>
+							<execution>
+								<!-- Step 6: Run jdeps to determine required JDK modules -->
+								<id>call-jdeps</id>
+								<goals>
+									<goal>jdeps</goal>
+								</goals>
+								<configuration>
+									<output>${project.build.directory}/jlink/jdeps.out</output>
+									<options>
+										<option>--module-path</option>
+										<option>${project.build.directory}/jlink/mod</option>
+										<option>${project.build.directory}/jlink/shaded.jar</option>
+									</options>
+								</configuration>
+							</execution>
+							<execution>
+								<!-- Step 7: Build JVM distro containing required modules using jlink -->
+								<id>call-jlink</id>
+								<goals>
+									<goal>jlink</goal>
+								</goals>
+								<configuration>
+									<jdepsReportPath>${project.build.directory}/jlink/jdeps.out</jdepsReportPath>
+									<output>${project.build.directory}/distribution-${jdk.os}/runtime</output>
+									<modulePaths>
+										<modulePath>${jlink.jdk.path}/${jdk.moddir}</modulePath>
+									</modulePaths>
+									<addModules>
+										<addModule>jdk.localedata</addModule>
+									</addModules>
+									<options>
+										<!-- use 1 instead of 2 because we get better results after xz compression -->
+										<option>--compress=1</option>
+										<option>--no-header-files</option>
+										<option>--no-man-pages</option>
+										<option>--include-locales=en</option>
+									</options>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-failsafe-plugin</artifactId>
+						<version>3.5.3</version>
+						<executions>
+							<execution>
+								<goals>
+									<goal>integration-test</goal>
+									<goal>verify</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+</project>
