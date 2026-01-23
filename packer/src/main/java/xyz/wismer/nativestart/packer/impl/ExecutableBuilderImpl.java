@@ -120,8 +120,7 @@ public class ExecutableBuilderImpl implements ExecutableBuilder {
 			directory.getEntries().add(entry(ResourceType.MANIFEST,
 					directory(entry(1, directory(entry(1033, manifest.toByteArray()))))));
 
-			// we know that .rdata section is at second position
-			customize(pe.getSectionTable().getSection(1).getData());
+			customize(pe.getSectionTable().findSection(".rdata").getData());
 
 			pe.getImageData().setResourceTable(directory);
 			pe.rebuild(PaddingType.PATTERN);
