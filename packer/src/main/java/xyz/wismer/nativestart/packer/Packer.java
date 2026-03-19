@@ -11,7 +11,7 @@ public class Packer {
 	}
 
 	public static DescriptorBuilder descriptorBuilder(String name, String version, OperatingSystem os) {
-		return new DescriptorBuilderImpl(name, version, os, HashAlgorithm.SHA256);
+		return new DescriptorBuilderImpl(name, version, os, HashAlgorithm.BLAKE3);
 	}
 
 	public static DescriptorBuilder descriptorBuilder(String name, String version, OperatingSystem os, HashAlgorithm hashAlgorithm) {

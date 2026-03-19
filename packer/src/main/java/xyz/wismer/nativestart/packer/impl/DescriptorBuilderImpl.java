@@ -1,18 +1,19 @@
 package xyz.wismer.nativestart.packer.impl;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import xyz.wismer.nativestart.packer.Component;
 import xyz.wismer.nativestart.packer.CompressionAlgorithm;
 import xyz.wismer.nativestart.packer.DescriptorBuilder;
 import xyz.wismer.nativestart.packer.HashAlgorithm;
 import xyz.wismer.nativestart.packer.OperatingSystem;
+import xyz.wismer.nativestart.packer.manifest.Descriptor;
+import xyz.wismer.nativestart.packer.manifest.JvmParameters;
 import xyz.wismer.nativestart.packer.util.CompressUtils;
 import xyz.wismer.nativestart.packer.util.HashUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -27,20 +28,20 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 
 	private final String name;
 	private final String version;
-	private Artifact splash;
+	private Component splash;
 	private final OperatingSystem os;
 	private final HashAlgorithm hashAlgorithm;
 
-	private Artifact jvm;
+	private Component jvm;
 	private final JvmParameters jvmParameters = new JvmParameters();
-	private final List<Artifact> libraries = new ArrayList<>();
-	private final List<Artifact> resources = new ArrayList<>();
+	private final List<Component> libraries = new ArrayList<>();
+	private final List<Component> resources = new ArrayList<>();
 	private final List<String> unmanagedPaths = new ArrayList<>();
 
 	// smaller output, but much slower: CompressionAlgorithm.XZ with level 9
 	private CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.ZSTD;
 	private int compressionLevel = 12;
-	private final Map<Artifact, File> toCompress = new HashMap<>();
+	private final Map<Component, File> toCompress = new HashMap<>();
 
 	public DescriptorBuilderImpl(String name, String version, OperatingSystem os, HashAlgorithm hashAlgorithm) {
 		this.name = name;
@@ -50,15 +51,15 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 	}
 
 	@Override
-	public DescriptorBuilder splash(File folder, String downloadPath, String installationPath) throws IOException {
-		splash = createArtifact(folder, downloadPath, installationPath);
+	public DescriptorBuilder splash(Component component) throws IOException {
+		splash = createComponent(component);
 		return this;
 	}
 
 	@Override
-	public DescriptorBuilder jvm(File folder, String downloadPath, String installationPath) throws IOException {
-		jvm(installationPath);
-		jvm = createArtifact(folder, downloadPath, dir(installationPath));
+	public DescriptorBuilder jvm(Component component) throws IOException {
+		jvm(dir(component.getInstallationPath()));
+		jvm = createComponent(component);
 		return this;
 	}
 
@@ -79,14 +80,14 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 	}
 
 	@Override
-	public DescriptorBuilder library(File file, String downloadPath, String installationPath) throws IOException {
-		libraries.add(createArtifact(file, downloadPath, installationPath));
+	public DescriptorBuilder library(Component component) throws IOException {
+		libraries.add(createComponent(component));
 		return this;
 	}
 
 	@Override
-	public DescriptorBuilder resource(File file, String downloadPath, String installationPath) throws IOException {
-		resources.add(createArtifact(file, downloadPath, installationPath));
+	public DescriptorBuilder resource(Component component) throws IOException {
+		resources.add(createComponent(component));
 		return this;
 	}
 
@@ -106,72 +107,77 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 	@Override
 	public void generate(File targetDirectory, URL baseURL, PrivateKey signatureKey) throws IOException {
 		String classpath = libraries.stream()
-				.map(Artifact::getPath)
+				.map(Component::getInstallationPath)
 				.collect(Collectors.joining(os.pathSeparator()));
 		systemProperty("java.class.path", classpath);
 
-		List<Artifact> artifacts = new ArrayList<>();
-		artifacts.add(jvm);
-		artifacts.addAll(libraries);
-		artifacts.addAll(resources);
-
-		List<Artifact> artifactsAndSplash = new ArrayList<>(artifacts);
-		artifactsAndSplash.add(splash);
-
-		// derive URL from path if not set
-		for (Artifact artifact : artifactsAndSplash) {
-			if (artifact.getUrl() == null) {
-				artifact.setUrl(url(baseURL, artifact.getPath()));
-			} else {
-				artifact.setUrl(url(baseURL, artifact.getUrl()));
-			}
-		}
+		List<Component> components = new ArrayList<>();
+		components.add(jvm);
+		components.addAll(libraries);
+		components.addAll(resources);
 
 		// compress resources
-		for (Map.Entry<Artifact, File> entry : toCompress.entrySet()) {
-			Artifact artifact = entry.getKey();
-			String filename = StringUtils.substringAfterLast(artifact.getUrl(), "/");
+		for (Map.Entry<Component, File> entry : toCompress.entrySet()) {
+			Component component = entry.getKey();
+			String filename = StringUtils.substringAfterLast(component.getRemotePath(), "/");
 			if (!filename.endsWith(compressionAlgorithm.getFileExtension())) {
 				filename = filename + compressionAlgorithm.getFileExtension();
-				artifact.setUrl(artifact.getUrl() + compressionAlgorithm.getFileExtension());
+				component.setRemotePath(component.getRemotePath() + compressionAlgorithm.getFileExtension());
 			}
 			File compressedFile = new File(targetDirectory, filename);
 			if (!compressedFile.exists()) {
 				CompressUtils.compress(entry.getValue(), compressedFile, compressionAlgorithm, compressionLevel);
 			}
 			long downloadSize = compressedFile.length();
-			if (downloadSize != artifact.getSize()) {
-				artifact.setDownloadSize(downloadSize);
+			if (downloadSize != component.getInstallationSize()) {
+				component.setRemoteSize(downloadSize);
 			}
 		}
 
 		Descriptor desc = new Descriptor(name, version);
-		desc.setSplash(splash);
+		desc.setSplash(toManifest(splash, baseURL));
 		desc.setJvmParams(jvmParameters);
-		desc.setArtifacts(artifacts);
+		desc.setComponents(components.stream().map(a -> toManifest(a, baseURL)).toList());
 		desc.setUnmanagedPaths(unmanagedPaths.isEmpty() ? null : unmanagedPaths);
 
-		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 		if (signatureKey != null) {
 			desc.setSignature("");
-			byte[] manifest = gson.toJson(desc).getBytes(StandardCharsets.UTF_8);
+			byte[] manifest = desc.toToml().getBytes(StandardCharsets.UTF_8);
 			desc.setSignature(HashUtils.sign(manifest, signatureKey));
 		}
 
-		Files.write(targetDirectory.toPath().resolve(name + "-" + os.name().toLowerCase() + ".json"),
-				gson.toJson(desc).getBytes());
+		Files.write(targetDirectory.toPath().resolve(name + "-" + version + "-" + os.name().toLowerCase() + ".toml"),
+				desc.toToml().getBytes());
 	}
 
-	private Artifact createArtifact(File file, String downloadPath, String installationPath) throws IOException {
-		HashUtils.Info info = HashUtils.hash(hashAlgorithm, file);
-		Artifact artifact = new Artifact(downloadPath, info.getSize(), info.getHash(), installationPath);
-		if (file.isDirectory()) {
-			toCompress.put(artifact, file);
+	private Component createComponent(Component component) throws IOException {
+		File localSource = component.getLocalSource();
+		if (localSource != null) {
+			HashUtils.Info info = HashUtils.hash(hashAlgorithm, localSource);
+			component.setInstallationSize(info.getSize());
+			component.setInstallationChecksum(info.getHash());
+			if (localSource.isDirectory()) {
+				toCompress.put(component, localSource);
+			}
+			else {
+				component.setRemoteSize(info.getSize());
+			}
 		}
-		return artifact;
+		return component;
 	}
 
-	private String url(URL baseURL, String urlOrPath) throws MalformedURLException {
+	private xyz.wismer.nativestart.packer.manifest.Component toManifest(Component component, URL baseURL) {
+		String url = url(baseURL, ObjectUtils.firstNonNull(component.getRemotePath(), component.getInstallationPath()));
+		xyz.wismer.nativestart.packer.manifest.Component result = new xyz.wismer.nativestart.packer.manifest.Component(url, component.getInstallationSize(),
+				component.getInstallationChecksum(), component.getInstallationPath());
+		if (component.getRemoteSize() != component.getInstallationSize()) {
+			result.setDownloadSize(component.getRemoteSize());
+		}
+		result.setCachePath(component.getCachePath());
+		return result;
+	}
+
+	private String url(URL baseURL, String urlOrPath) {
 		if (urlOrPath.startsWith("http://") || urlOrPath.startsWith("https://")) {
 			return urlOrPath;
 		} else {

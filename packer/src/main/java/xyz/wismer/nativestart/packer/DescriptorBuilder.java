@@ -12,23 +12,17 @@ public interface DescriptorBuilder {
 
 	/**
 	 * Set the splash screen.
-	 * @param folder the folder containing all resources for the splash screen
-	 * @param downloadPath the relative path to download the resources. The file extension can be omitted and will be
-	 *                     determined by the compression method
-	 * @param installationPath the relative path to the base installation folder where to put the splash resources
+	 * @param component the component for the splash screen
 	 * @return this instance
 	 */
-	DescriptorBuilder splash(File folder, String downloadPath, String installationPath) throws IOException;
+	DescriptorBuilder splash(Component component) throws IOException;
 
 	/**
 	 * Set the JVM.
-	 * @param folder the folder containing all resources for the JVM
-	 * @param downloadPath the relative path to download the resources. The file extension can be omitted and will be
-	 *                     determined by the compression method
-	 * @param installationPath the relative path to the base installation folder where to put the JVM
+	 * @param component the component for the JVM
 	 * @return this instance
 	 */
-	DescriptorBuilder jvm(File folder, String downloadPath, String installationPath) throws IOException;
+	DescriptorBuilder jvm(Component component) throws IOException;
 
 	/**
 	 * Set the main class of the application.
@@ -54,39 +48,19 @@ public interface DescriptorBuilder {
 	 */
 	DescriptorBuilder option(String option);
 
-	default DescriptorBuilder library(File file) throws IOException {
-		return library(file, file.getName());
-	}
-
-	default DescriptorBuilder library(File file, String installationPath) throws IOException {
-		return library(file, null, installationPath);
-	}
-
 	/**
 	 * Add a library file.
-	 * @param file the library file
-	 * @param downloadPath the relative path to download the file, including the extension (e.g. ".jar")
-	 * @param installationPath the relative path to the base installation folder where to put the library
+	 * @param component the component for the library
 	 * @return this instance
 	 */
-	DescriptorBuilder library(File file, String downloadPath, String installationPath) throws IOException;
-
-	default DescriptorBuilder resource(File file) throws IOException {
-		return resource(file, file.getName());
-	}
-
-	default DescriptorBuilder resource(File file, String installationPath) throws IOException {
-		return resource(file, null, installationPath);
-	}
+	DescriptorBuilder library(Component component) throws IOException;
 
 	/**
 	 * Add a generic resource file.
-	 * @param file the resource file
-	 * @param downloadPath the relative path to download the file, including the extension
-	 * @param installationPath the relative path to the base installation folder where to put the resource file
+	 * @param component the component for the resource file
 	 * @return this instance
 	 */
-	DescriptorBuilder resource(File file, String downloadPath, String installationPath) throws IOException;
+	DescriptorBuilder resource(Component component) throws IOException;
 
 	/**
 	 * Mark a folder in the installation as "unmanaged", so the launcher will not delete any files from there

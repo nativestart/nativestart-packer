@@ -14,6 +14,11 @@
 
 	<name>packer</name>
 
+	<properties>
+		<binaries.baseurl>https://github.com/nativestart/nativestart/releases/download/</binaries.baseurl>
+		<binaries.version>v1.0.0-alpha1</binaries.version>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -24,11 +29,6 @@
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>2.19.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.code.gson</groupId>
-			<artifactId>gson</artifactId>
-			<version>2.13.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
@@ -73,6 +73,130 @@
 					<source>17</source>
 					<target>17</target>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>io.github.download-maven-plugin</groupId>
+				<artifactId>download-maven-plugin</artifactId>
+				<version>2.1.0</version>
+				<executions>
+					<execution>
+						<id>get-linux-signed</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>${binaries.baseurl}${binaries.version}/nativestart-linux-amd64-unsigned</url>
+							<outputDirectory>${project.build.directory}/native/linux</outputDirectory>
+							<outputFileName>signed</outputFileName>
+						</configuration>
+					</execution>
+					<execution>
+						<id>get-linux-unsigned</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>${binaries.baseurl}${binaries.version}/nativestart-linux-amd64-signed</url>
+							<outputDirectory>${project.build.directory}/native/linux</outputDirectory>
+							<outputFileName>unsigned</outputFileName>
+						</configuration>
+					</execution>
+					<execution>
+						<id>get-windows-signed</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>${binaries.baseurl}${binaries.version}/nativestart-amd64-signed.exe</url>
+							<outputDirectory>${project.build.directory}/native/windows</outputDirectory>
+							<outputFileName>signed.exe</outputFileName>
+						</configuration>
+					</execution>
+					<execution>
+						<id>get-windows-unsigned</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>${binaries.baseurl}${binaries.version}/nativestart-amd64-unsigned.exe</url>
+							<outputDirectory>${project.build.directory}/native/windows</outputDirectory>
+							<outputFileName>unsigned.exe</outputFileName>
+						</configuration>
+					</execution>
+					<execution>
+						<id>get-mac-x64-signed</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>${binaries.baseurl}${binaries.version}/nativestart-darwin-arm64-signed</url>
+							<outputDirectory>${project.build.directory}/native/mac-x64</outputDirectory>
+							<outputFileName>signed</outputFileName>
+						</configuration>
+					</execution>
+					<execution>
+						<id>get-mac-x64-unsigned</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>${binaries.baseurl}${binaries.version}/nativestart-darwin-arm64-unsigned</url>
+							<outputDirectory>${project.build.directory}/native/mac-x64</outputDirectory>
+							<outputFileName>unsigned</outputFileName>
+						</configuration>
+					</execution>
+					<execution>
+						<id>get-mac-aarch64-signed</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>${binaries.baseurl}${binaries.version}/nativestart-darwin-amd64-signed</url>
+							<outputDirectory>${project.build.directory}/native/mac-aarch64</outputDirectory>
+							<outputFileName>signed</outputFileName>
+						</configuration>
+					</execution>
+					<execution>
+						<id>get-mac-aarch64-unsigned</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>${binaries.baseurl}${binaries.version}/nativestart-darwin-amd64-unsigned</url>
+							<outputDirectory>${project.build.directory}/native/mac-aarch64</outputDirectory>
+							<outputFileName>unsigned</outputFileName>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>3.6.1</version>
+				<executions>
+					<execution>
+						<id>add-resource</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>add-resource</goal>
+						</goals>
+						<configuration>
+							<resources>
+								<resource>
+									<directory>${project.build.directory}/native</directory>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
