@@ -1,4 +1,4 @@
-package xyz.wismer.nativestart.packer.impl;
+package xyz.wismer.nativestart.packer.manifest;
 
 import xyz.wismer.nativestart.packer.OperatingSystem;
 
@@ -23,7 +23,7 @@ public class JvmParameters {
 				break;
 			case MAC:
 				setJvmPath(installationPath + "lib");
-				// Java 11 would actually be "jli/libjli.dylib" (currently not supported)
+				// Java 11 would actually be "jli/libjli.dylib" (not supported)
 				setJvmLibrary("libjli.dylib");
 				break;
 		}
@@ -59,5 +59,12 @@ public class JvmParameters {
 
 	public void setOptions(List<String> options) {
 		this.options = options;
+	}
+
+	public void append(Toml toml) {
+		toml.append("path", jvmPath);
+		toml.append("library", jvmLibrary);
+		toml.append("main", mainClass);
+		toml.append("options", options);
 	}
 }

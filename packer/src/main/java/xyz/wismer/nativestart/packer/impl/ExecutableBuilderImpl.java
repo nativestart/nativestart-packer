@@ -30,6 +30,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import xyz.wismer.nativestart.packer.Architecture;
 import xyz.wismer.nativestart.packer.ExecutableBuilder;
 import xyz.wismer.nativestart.packer.OperatingSystem;
 
@@ -80,8 +81,8 @@ public class ExecutableBuilderImpl implements ExecutableBuilder {
 	}
 
 	@Override
-	public void build(OperatingSystem os, OutputStream outputStream) throws IOException {
-		InputStream input = getGenericInput(os, key != null);
+	public void build(OperatingSystem os, Architecture arch, OutputStream outputStream) throws IOException {
+		InputStream input = getGenericInput(os, arch,key != null);
 
 		byte[] bytes;
 		if (os == OperatingSystem.WINDOWS) {
@@ -154,9 +155,10 @@ public class ExecutableBuilderImpl implements ExecutableBuilder {
 		}
 	}
 
-	private InputStream getGenericInput(OperatingSystem os, boolean signSupport) {
+	private InputStream getGenericInput(OperatingSystem os, Architecture arch, boolean signSupport) {
 		String executable = (signSupport ? "" : "un") + "signed" + os.getExecutablePostfix();
-		return ExecutableBuilder.class.getResourceAsStream("/" + os.name().toLowerCase() + "/" + executable);
+		String folder = os.name().toLowerCase() + "-" + arch.name().toLowerCase();
+		return ExecutableBuilder.class.getResourceAsStream("/" + folder + "/" + executable);
 	}
 
 	private void addResourceSection(PE pe) {

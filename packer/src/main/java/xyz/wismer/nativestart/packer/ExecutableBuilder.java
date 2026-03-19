@@ -12,5 +12,5 @@ public interface ExecutableBuilder {
 
 	void setKey(PublicKey key);
 
-	void build(OperatingSystem os, OutputStream outputStream) throws IOException;
+	void build(OperatingSystem os, Architecture arch, OutputStream outputStream) throws IOException;
 }
