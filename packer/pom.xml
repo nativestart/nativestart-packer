@@ -16,7 +16,7 @@
 
 	<properties>
 		<binaries.baseurl>https://github.com/nativestart/nativestart/releases/download/</binaries.baseurl>
-		<binaries.version>1.0.0-alpha2</binaries.version>
+		<binaries.version>1.0.0-alpha4</binaries.version>
 	</properties>
 
 	<dependencies>
@@ -38,7 +38,7 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
-			<version>1.27.1</version>
+			<version>1.28.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.tukaani</groupId>
@@ -136,7 +136,7 @@
 						<configuration>
 							<url>${binaries.baseurl}${binaries.version}/nativestart-mac-x86_64-signed</url>
 							<outputDirectory>${project.build.directory}/native/mac-x86_64</outputDirectory>
-							<outputFileName>signed</outputFileName>
+							<outputFileName>signed.app</outputFileName>
 						</configuration>
 					</execution>
 					<execution>
@@ -148,7 +148,7 @@
 						<configuration>
 							<url>${binaries.baseurl}${binaries.version}/nativestart-mac-x86_64-unsigned</url>
 							<outputDirectory>${project.build.directory}/native/mac-x86_64</outputDirectory>
-							<outputFileName>unsigned</outputFileName>
+							<outputFileName>unsigned.app</outputFileName>
 						</configuration>
 					</execution>
 					<execution>
@@ -160,7 +160,7 @@
 						<configuration>
 							<url>${binaries.baseurl}${binaries.version}/nativestart-mac-aarch64-signed</url>
 							<outputDirectory>${project.build.directory}/native/mac-aarch64</outputDirectory>
-							<outputFileName>signed</outputFileName>
+							<outputFileName>signed.app</outputFileName>
 						</configuration>
 					</execution>
 					<execution>
@@ -172,7 +172,7 @@
 						<configuration>
 							<url>${binaries.baseurl}${binaries.version}/nativestart-mac-aarch64-unsigned</url>
 							<outputDirectory>${project.build.directory}/native/mac-aarch64</outputDirectory>
-							<outputFileName>unsigned</outputFileName>
+							<outputFileName>unsigned.app</outputFileName>
 						</configuration>
 					</execution>
 				</executions>

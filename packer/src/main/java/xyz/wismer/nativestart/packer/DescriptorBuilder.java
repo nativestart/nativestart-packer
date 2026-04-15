@@ -49,11 +49,15 @@ public interface DescriptorBuilder {
 	DescriptorBuilder option(String option);
 
 	/**
-	 * Add a library file.
+	 * Add a library file (added to the classpath).
 	 * @param component the component for the library
 	 * @return this instance
 	 */
-	DescriptorBuilder library(Component component) throws IOException;
+	default DescriptorBuilder library(Component component) throws IOException {
+		resource(component);
+		addToClasspath(component.getInstallationPath());
+		return this;
+	}
 
 	/**
 	 * Add a generic resource file.
@@ -61,6 +65,13 @@ public interface DescriptorBuilder {
 	 * @return this instance
 	 */
 	DescriptorBuilder resource(Component component) throws IOException;
+
+	/**
+	 * Add a path to the application classpath.
+	 * @param path the path to append in the installation directory
+	 * @return this instance
+	 */
+	DescriptorBuilder addToClasspath(String path);
 
 	/**
 	 * Mark a folder in the installation as "unmanaged", so the launcher will not delete any files from there

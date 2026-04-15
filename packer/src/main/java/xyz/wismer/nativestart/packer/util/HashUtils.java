@@ -50,6 +50,8 @@ public class HashUtils {
 				}
 				return new Info(size, hashIndex(hashAlgorithm, hashes));
 			}
+		} else if (!file.exists()) {
+			throw new IOException(file.getAbsolutePath() + " does not exist");
 		}
 		throw new IOException("Only files and directories are supported");
 	}

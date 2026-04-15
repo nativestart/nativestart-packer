@@ -64,7 +64,7 @@ public class DemoIT {
 		DescriptorBuilder builder = Packer.descriptorBuilder("Demo", "1.0.0", OperatingSystem.LINUX);
 		builder.splash(new Component(new File("target/test-classes/splash"), "splash/splash", "splash/"))
 				.jvm(new Component(new File("target/distribution-linux/runtime/"), "runtime/jdk-linux", "runtime/"))
-				.library(new Component(new File("target/demo-1.0.0-SNAPSHOT.jar")))
+				.library(new Component(new File("target/demo-1.0.0-SNAPSHOT.jar"), "lib/demo.jar", "lib/demo.jar"))
 				.main("xyz.wismer.nativestart.demo.DemoApp")
 				.systemProperty("java.library.path", "runtime/lib");
 
@@ -83,9 +83,9 @@ public class DemoIT {
 	@EnabledOnOs(OS.LINUX)
 	void runSignedApplication() throws Exception {
 		DescriptorBuilder builder = Packer.descriptorBuilder("Demo", "1.0.0", OperatingSystem.LINUX);
-		builder.splash(new Component(new File("target/test-classes/splash"), "splash/splash.tar", "splash/"))
-				.jvm(new Component(new File("target/distribution-linux/runtime/"), "runtime/jdk-linux.tar", "runtime/"))
-				.library(new Component(new File("target/demo-1.0.0-SNAPSHOT.jar")))
+		builder.splash(new Component(new File("target/test-classes/splash"), "splash/splash", "splash/"))
+				.jvm(new Component(new File("target/distribution-linux/runtime/"), "runtime/jdk-linux", "runtime/"))
+				.library(new Component(new File("target/demo-1.0.0-SNAPSHOT.jar"), "lib/demo.jar", "lib/demo.jar"))
 				.main("xyz.wismer.nativestart.demo.DemoApp")
 				.systemProperty("java.library.path", "runtime/lib");
 
@@ -109,18 +109,15 @@ public class DemoIT {
 		@Override
 		public void handle(HttpExchange t) throws IOException {
 			String requestPath = t.getRequestURI().getPath();
-			String file = StringUtils.substringAfterLast(requestPath, "/");
-			if (requestPath.equals("/app.toml")) {
+			String file = requestPath.substring(1);
+			if (file.equals("app.toml")) {
 				serveFile(t, tempDir.toPath().resolve("Demo-1.0.0-linux.toml"));
 			}
-			else if (requestPath.startsWith("/splash/splash")) {
-				serveFile(t, tempDir.toPath().resolve(file));
-			}
-			else if (requestPath.startsWith("/runtime/jdk-linux")) {
-				serveFile(t, tempDir.toPath().resolve(file));
-			}
-			else if (requestPath.equals("/demo-1.0.0-SNAPSHOT.jar")) {
+			else if (requestPath.equals("/lib/demo.jar")) {
 				serveFile(t, new File("target/demo-1.0.0-SNAPSHOT.jar").toPath());
+			}
+			else if (Files.exists(tempDir.toPath().resolve(file))) {
+				serveFile(t, tempDir.toPath().resolve(file));
 			}
 			else {
 				t.sendResponseHeaders(404, 0);

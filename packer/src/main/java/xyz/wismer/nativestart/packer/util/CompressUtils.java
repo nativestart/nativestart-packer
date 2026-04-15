@@ -26,6 +26,7 @@ public class CompressUtils {
 		} else if (file.isDirectory()) {
 			try (TarArchiveOutputStream taos = new TarArchiveOutputStream(
 					compressedStream(Files.newOutputStream(target.toPath()), algorithm, level))) {
+				taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
 				addToArchive(taos, file, null);
 			}
 		} else {
@@ -56,9 +57,14 @@ public class CompressUtils {
 			if (Files.isSymbolicLink(file.toPath())) {
 				TarArchiveEntry symLinkEntry = new TarArchiveEntry(entry, TarConstants.LF_SYMLINK);
 				symLinkEntry.setLinkName(Files.readSymbolicLink(file.toPath()).toString());
+				symLinkEntry.setUserId(0);
+				symLinkEntry.setGroupId(0);
 				out.putArchiveEntry(symLinkEntry);
 			} else {
-				out.putArchiveEntry(new TarArchiveEntry(file, entry));
+				TarArchiveEntry tarEntry = new TarArchiveEntry(file, entry);
+				tarEntry.setUserId(0);
+				tarEntry.setGroupId(0);
+				out.putArchiveEntry(tarEntry);
 				try (FileInputStream in = new FileInputStream(file)) {
 					IOUtils.copy(in, out);
 				}

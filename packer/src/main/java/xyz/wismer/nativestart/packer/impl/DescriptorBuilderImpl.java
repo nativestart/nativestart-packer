@@ -1,5 +1,6 @@
 package xyz.wismer.nativestart.packer.impl;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import xyz.wismer.nativestart.packer.Component;
@@ -18,12 +19,10 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.PrivateKey;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class DescriptorBuilderImpl implements DescriptorBuilder {
 
@@ -35,14 +34,14 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 
 	private Component jvm;
 	private final JvmParameters jvmParameters = new JvmParameters();
-	private final List<Component> libraries = new ArrayList<>();
-	private final List<Component> resources = new ArrayList<>();
+	private final List<String> classpath = new ArrayList<>();
+	private final List<Component> components = new ArrayList<>();
 	private final List<String> unmanagedPaths = new ArrayList<>();
 
 	// smaller output, but much slower: CompressionAlgorithm.XZ with level 9
 	private CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.ZSTD;
 	private int compressionLevel = 12;
-	private final Map<Component, File> toCompress = new HashMap<>();
+	private final List<Component> toCompress = new ArrayList<>();
 	private File descriptor;
 
 	public DescriptorBuilderImpl(String name, String version, OperatingSystem os, HashAlgorithm hashAlgorithm) {
@@ -82,14 +81,14 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 	}
 
 	@Override
-	public DescriptorBuilder library(Component component) throws IOException {
-		libraries.add(createComponent(component));
+	public DescriptorBuilder resource(Component component) throws IOException {
+		components.add(createComponent(component));
 		return this;
 	}
 
 	@Override
-	public DescriptorBuilder resource(Component component) throws IOException {
-		resources.add(createComponent(component));
+	public DescriptorBuilder addToClasspath(String path) {
+		classpath.add(path);
 		return this;
 	}
 
@@ -114,29 +113,33 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 
 	@Override
 	public void generate(File targetDirectory, URL baseURL, PrivateKey signatureKey) throws IOException {
-		String classpath = libraries.stream()
-				.map(Component::getInstallationPath)
-				.collect(Collectors.joining(os.pathSeparator()));
-		systemProperty("java.class.path", classpath);
+		systemProperty("java.class.path", StringUtils.join(classpath, os.pathSeparator()));
 
-		List<Component> components = new ArrayList<>();
-		components.add(jvm);
-		components.addAll(libraries);
-		components.addAll(resources);
-
-		// compress resources
-		for (Map.Entry<Component, File> entry : toCompress.entrySet()) {
-			Component component = entry.getKey();
-			String filename = component.getRemotePath().contains("/") ?
-					StringUtils.substringAfterLast(component.getRemotePath(), "/") :
-					component.getRemotePath();
-			if (!filename.endsWith(compressionAlgorithm.getFileExtension())) {
-				filename = filename + compressionAlgorithm.getFileExtension();
-				component.setRemotePath(component.getRemotePath() + compressionAlgorithm.getFileExtension());
+		List<Component> allComponents = new ArrayList<>();
+		allComponents.add(jvm);
+		allComponents.addAll(components);
+		
+		// copy uncompressed resources
+		for (Component component : allComponents) {
+			if (!toCompress.contains(component)) {
+				File compressedFile = new File(targetDirectory, component.getRemotePath());
+				if (!compressedFile.exists()) {
+					Files.createDirectories(compressedFile.toPath().getParent());
+					Files.copy(component.getLocalSource().toPath(), compressedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				}
 			}
+		}
+		// compress resources
+		for (Component component : toCompress) {
+			String extension = compressionAlgorithm.getFileExtension();
+			if (!component.getRemotePath().endsWith(extension)) {
+				component.setRemotePath(FilenameUtils.removeExtension(component.getRemotePath()) + extension);
+			}
+			String filename = component.getRemotePath();
 			File compressedFile = new File(targetDirectory, filename);
 			if (!compressedFile.exists()) {
-				CompressUtils.compress(entry.getValue(), compressedFile, compressionAlgorithm, compressionLevel);
+				Files.createDirectories(compressedFile.toPath().getParent());
+				CompressUtils.compress(component.getLocalSource(), compressedFile, compressionAlgorithm, compressionLevel);
 			}
 			long downloadSize = compressedFile.length();
 			if (downloadSize != component.getInstallationSize()) {
@@ -147,7 +150,7 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 		Descriptor desc = new Descriptor(name, version);
 		desc.setSplash(toManifest(splash, baseURL));
 		desc.setJvmParams(jvmParameters);
-		desc.setComponents(components.stream().map(a -> toManifest(a, baseURL)).toList());
+		desc.setComponents(allComponents.stream().map(a -> toManifest(a, baseURL)).toList());
 		desc.setUnmanagedPaths(unmanagedPaths.isEmpty() ? null : unmanagedPaths);
 
 		if (signatureKey != null) {
@@ -173,7 +176,7 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 			component.setInstallationChecksum(info.getHash());
 			component.setRemotePath(component.getRemotePath().replace("{hash}", info.getHash()));
 			if (localSource.isDirectory()) {
-				toCompress.put(component, localSource);
+				toCompress.add(component);
 			}
 			else {
 				component.setRemoteSize(info.getSize());

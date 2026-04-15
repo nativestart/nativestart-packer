@@ -45,8 +45,8 @@ public class DemoApp extends Application {
 	}
 
 	public static void main(String[] args) {
-		if (args.length > 1) {
-			int seconds = Integer.parseInt(args[1]);
+		if (args.length > 0) {
+			int seconds = Integer.parseInt(args[0]);
 			new Thread(() -> {
 				try {
 					Thread.sleep(seconds * 1000);
