@@ -4,6 +4,6 @@ public enum CompressionAlgorithm {
 	@Deprecated XZ, ZSTD;
 
 	public String getFileExtension() {
-		return ".tar." + name().toLowerCase();
+		return "." + name().toLowerCase();
 	}
 }

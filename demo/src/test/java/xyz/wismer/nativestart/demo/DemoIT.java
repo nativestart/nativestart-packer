@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import xyz.wismer.nativestart.packer.Architecture;
 import xyz.wismer.nativestart.packer.Component;
 import xyz.wismer.nativestart.packer.DescriptorBuilder;
@@ -58,15 +60,17 @@ public class DemoIT {
 		FileUtils.deleteDirectory(new File(System.getProperty("user.home") + "/.cache/Demo"));
 	}
 
-	@Test
+	@ParameterizedTest
+	@ValueSource(booleans = {true, false})
 	@EnabledOnOs(OS.LINUX)
-	void runApplication() throws Exception {
+	void runApplication(boolean recompressLibraries) throws Exception {
 		DescriptorBuilder builder = Packer.descriptorBuilder("Demo", "1.0.0", OperatingSystem.LINUX);
 		builder.splash(new Component(new File("target/test-classes/splash"), "splash/splash", "splash/"))
 				.jvm(new Component(new File("target/distribution-linux/runtime/"), "runtime/jdk-linux", "runtime/"))
 				.library(new Component(new File("target/packer-demo-1.0.0-SNAPSHOT.jar"), "lib/demo.jar", "lib/demo.jar"))
 				.main("xyz.wismer.nativestart.demo.DemoApp")
-				.systemProperty("java.library.path", "runtime/lib");
+				.systemProperty("java.library.path", "runtime/lib")
+				.recompressLibraries(recompressLibraries);
 
 		builder.generate(tempDir, new URL("http://localhost:8080/"), null);
 

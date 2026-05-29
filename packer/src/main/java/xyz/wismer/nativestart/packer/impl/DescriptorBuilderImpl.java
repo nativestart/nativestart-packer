@@ -42,6 +42,7 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 	private CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.ZSTD;
 	private int compressionLevel = 12;
 	private final List<Component> toCompress = new ArrayList<>();
+	private boolean recompressJars;
 	private File descriptor;
 
 	public DescriptorBuilderImpl(String name, String version, OperatingSystem os, HashAlgorithm hashAlgorithm) {
@@ -53,14 +54,14 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 
 	@Override
 	public DescriptorBuilder splash(Component component) throws IOException {
-		splash = createComponent(component);
+		splash = component;
 		return this;
 	}
 
 	@Override
 	public DescriptorBuilder jvm(Component component) throws IOException {
 		jvm(dir(component.getInstallationPath()));
-		jvm = createComponent(component);
+		jvm = component;
 		return this;
 	}
 
@@ -82,7 +83,7 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 
 	@Override
 	public DescriptorBuilder resource(Component component) throws IOException {
-		components.add(createComponent(component));
+		components.add(component);
 		return this;
 	}
 
@@ -106,6 +107,12 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 	}
 
 	@Override
+	public DescriptorBuilder recompressLibraries(boolean recompress) {
+		recompressJars = recompress;
+		return this;
+	}
+
+	@Override
 	public DescriptorBuilder descriptor(File targetFile) {
 		descriptor = targetFile;
 		return this;
@@ -115,13 +122,19 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 	public void generate(File targetDirectory, URL baseURL, PrivateKey signatureKey) throws IOException {
 		systemProperty("java.class.path", StringUtils.join(classpath, os.pathSeparator()));
 
+		fillComponent(splash);
+		fillComponent(jvm);
+		for (Component component : components) {
+			fillComponent(component);
+		}
+
 		List<Component> allComponents = new ArrayList<>();
 		allComponents.add(jvm);
 		allComponents.addAll(components);
-		
+
 		// copy uncompressed resources
 		for (Component component : allComponents) {
-			if (!toCompress.contains(component)) {
+			if (!toCompress.contains(component) && !(recompressJars && component.getInstallationPath().endsWith(".jar"))) {
 				File compressedFile = new File(targetDirectory, component.getRemotePath());
 				if (!compressedFile.exists()) {
 					Files.createDirectories(compressedFile.toPath().getParent());
@@ -131,9 +144,9 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 		}
 		// compress resources
 		for (Component component : toCompress) {
-			String extension = compressionAlgorithm.getFileExtension();
+			String extension = (component.getLocalSource().isDirectory() ? ".tar" : "") + compressionAlgorithm.getFileExtension();
 			if (!component.getRemotePath().endsWith(extension)) {
-				component.setRemotePath(FilenameUtils.removeExtension(component.getRemotePath()) + extension);
+				component.setRemotePath(component.getRemotePath() + extension);
 			}
 			String filename = component.getRemotePath();
 			File compressedFile = new File(targetDirectory, filename);
@@ -168,21 +181,21 @@ public class DescriptorBuilderImpl implements DescriptorBuilder {
 		Files.write(descriptorPath, desc.toToml().getBytes());
 	}
 
-	private Component createComponent(Component component) throws IOException {
+	private void fillComponent(Component component) throws IOException {
 		File localSource = component.getLocalSource();
 		if (localSource != null) {
-			HashUtils.Info info = HashUtils.hash(hashAlgorithm, localSource);
+			boolean isJar = component.getInstallationPath().endsWith(".jar");
+			HashUtils.Info info = HashUtils.hash(hashAlgorithm, localSource, recompressJars && isJar);
 			component.setInstallationSize(info.getSize());
 			component.setInstallationChecksum(info.getHash());
 			component.setRemotePath(component.getRemotePath().replace("{hash}", info.getHash()));
-			if (localSource.isDirectory()) {
+			if (localSource.isDirectory() || (recompressJars && isJar)) {
 				toCompress.add(component);
 			}
 			else {
 				component.setRemoteSize(info.getSize());
 			}
 		}
-		return component;
 	}
 
 	private xyz.wismer.nativestart.packer.manifest.Component toManifest(Component component, URL baseURL) {

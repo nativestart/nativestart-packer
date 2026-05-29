@@ -153,8 +153,11 @@ public class PackMojo extends AbstractPackerMojo {
 						dir(app.getLib().getTarget()) + file.getName());
 				component.setCachePath(cachePaths.get(artifact.getArtifactId()));
 				builder.library(component);
-				Files.copy(file.toPath(), outputDirectory.resolve(app.getLib().getDistribution()).resolve(file.getName()), StandardCopyOption.REPLACE_EXISTING);
+				if (!app.isRecompressJars()) {
+					Files.copy(file.toPath(), outputDirectory.resolve(app.getLib().getDistribution()).resolve(file.getName()), StandardCopyOption.REPLACE_EXISTING);
+				}
 			}
+			builder.recompressLibraries(app.isRecompressJars());
 
 			for (Locations resource : app.getResources()) {
 				builder.resource(new Component(resource.getSource(), resource.getDistribution(), resource.getTarget()));
@@ -320,7 +323,7 @@ public class PackMojo extends AbstractPackerMojo {
 		}
 		app.setJvm(fillDefaults(app.getJvm(), "runtime/" + jdkName, "runtime/"));
 
-		File compressed = jdkCache.resolve("jdk" + compressionAlgorithm.getFileExtension()).toFile();
+		File compressed = jdkCache.resolve("jdk.tar" + compressionAlgorithm.getFileExtension()).toFile();
 		Component result;
 		if (!Files.exists(jdkCache)) {
 			ExecutionEnvironment executionEnvironment = createExecutionEnvironment();
@@ -403,7 +406,7 @@ public class PackMojo extends AbstractPackerMojo {
 				}
 
 				Files.createDirectories(jdkCache);
-				HashUtils.Info hashInfo = HashUtils.hash(HashAlgorithm.BLAKE3, outputDirectory.resolve(jdkName).toFile());
+				HashUtils.Info hashInfo = HashUtils.hash(HashAlgorithm.BLAKE3, outputDirectory.resolve(jdkName).toFile(), false);
 				CompressUtils.compress(outputDirectory.resolve(jdkName).toFile(), compressed, compressionAlgorithm, compressionLevel);
 
 				xyz.wismer.nativestart.packer.manifest.Component component = new xyz.wismer.nativestart.packer.manifest.Component(jdkName, hashInfo.getSize(), hashInfo.getHash(), null);
@@ -411,7 +414,7 @@ public class PackMojo extends AbstractPackerMojo {
 				Files.writeString(jdkCache.resolve("artifact.toml"), component.toToml());
 				Files.writeString(jdkCache.resolve("modules.txt"), descriptor);
 
-				result = new Component(app.getJvm().getDistribution() + compressionAlgorithm.getFileExtension(), compressed.length(), hashInfo.getHash(), hashInfo.getSize(), app.getJvm().getTarget());
+				result = new Component(app.getJvm().getDistribution() + ".tar" + compressionAlgorithm.getFileExtension(), compressed.length(), hashInfo.getHash(), hashInfo.getSize(), app.getJvm().getTarget());
 			} catch (IOException e) {
 				try {
 					FileUtils.deleteDirectory(jdkCache.toFile());
@@ -431,7 +434,7 @@ public class PackMojo extends AbstractPackerMojo {
 			try {
 				String toml = Files.readString(jdkCache.resolve("artifact.toml"));
 				xyz.wismer.nativestart.packer.manifest.Component component = xyz.wismer.nativestart.packer.manifest.Component.fromToml(toml);
-				result = new Component(app.getJvm().getDistribution() + compressionAlgorithm.getFileExtension(),
+				result = new Component(app.getJvm().getDistribution() + ".tar" + compressionAlgorithm.getFileExtension(),
 						component.getDownloadSize(), component.getChecksum(), component.getSize(), app.getJvm().getTarget());
 			} catch (IOException e) {
 				throw new MojoExecutionException(e);

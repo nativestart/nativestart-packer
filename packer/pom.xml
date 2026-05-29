@@ -94,6 +94,18 @@
 						</configuration>
 					</execution>
 					<execution>
+						<id>get-linux-checksum</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>${binaries.baseurl}${binaries.version}/nativestart-linux-x86_64-checksum</url>
+							<outputDirectory>${project.build.directory}/native/linux-x86_64</outputDirectory>
+							<outputFileName>checksum</outputFileName>
+						</configuration>
+					</execution>
+					<execution>
 						<id>get-windows-signed</id>
 						<phase>generate-resources</phase>
 						<goals>
@@ -115,6 +127,18 @@
 							<url>${binaries.baseurl}${binaries.version}/nativestart-windows-x86_64-unsigned.exe</url>
 							<outputDirectory>${project.build.directory}/native/windows-x86_64</outputDirectory>
 							<outputFileName>unsigned.exe</outputFileName>
+						</configuration>
+					</execution>
+					<execution>
+						<id>get-windows-checksum</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>${binaries.baseurl}${binaries.version}/nativestart-windows-x86_64-checksum.exe</url>
+							<outputDirectory>${project.build.directory}/native/windows-x86_64</outputDirectory>
+							<outputFileName>checksum.exe</outputFileName>
 						</configuration>
 					</execution>
 					<execution>
@@ -142,6 +166,18 @@
 						</configuration>
 					</execution>
 					<execution>
+						<id>get-mac-x64-checksum</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>${binaries.baseurl}${binaries.version}/nativestart-mac-x86_64-checksum</url>
+							<outputDirectory>${project.build.directory}/native/mac-x86_64</outputDirectory>
+							<outputFileName>checksum.app</outputFileName>
+						</configuration>
+					</execution>
+					<execution>
 						<id>get-mac-aarch64-signed</id>
 						<phase>generate-resources</phase>
 						<goals>
@@ -163,6 +199,18 @@
 							<url>${binaries.baseurl}${binaries.version}/nativestart-mac-aarch64-unsigned</url>
 							<outputDirectory>${project.build.directory}/native/mac-aarch64</outputDirectory>
 							<outputFileName>unsigned</outputFileName>
+						</configuration>
+					</execution>
+					<execution>
+						<id>get-mac-aarch64-checksum</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>${binaries.baseurl}${binaries.version}/nativestart-mac-aarch64-checksum</url>
+							<outputDirectory>${project.build.directory}/native/mac-aarch64</outputDirectory>
+							<outputFileName>checksum.app</outputFileName>
 						</configuration>
 					</execution>
 				</executions>

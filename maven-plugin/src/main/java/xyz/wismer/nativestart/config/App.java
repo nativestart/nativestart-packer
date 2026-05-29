@@ -16,6 +16,8 @@ public class App {
 	private Locations jvm;
 	/** The location for the library files */
 	private Locations lib;
+	/** Whether to recompress the JAR files */
+	private boolean recompressJars = false;
 	/** A comma separated list of GAV patterns describing artifacts to exclude from distribution */
 	private String dependencyExcludes;
 	/** The location for the general purpose resource files */
@@ -72,6 +74,14 @@ public class App {
 
 	public void setLib(Locations lib) {
 		this.lib = lib;
+	}
+
+	public boolean isRecompressJars() {
+		return recompressJars;
+	}
+
+	public void setRecompressJars(boolean recompressJars) {
+		this.recompressJars = recompressJars;
 	}
 
 	public String getDependencyExcludes() {
