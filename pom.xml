@@ -41,6 +41,7 @@
 
 	<modules>
 		<module>packer</module>
+		<module>maven-plugin</module>
 		<module>demo</module>
 	</modules>
 
