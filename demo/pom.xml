@@ -5,13 +5,13 @@
 	<parent>
 		<groupId>xyz.wismer.nativestart</groupId>
 		<artifactId>packer-parent</artifactId>
-		<version>1.0.0-SNAPSHOT</version>
+		<version>${revision}</version>
 	</parent>
 
-	<artifactId>demo</artifactId>
+	<artifactId>packer-demo</artifactId>
 	<packaging>jar</packaging>
 
-	<name>demo-application</name>
+	<name>NativeStart Packer Demo Application</name>
 
 	<dependencies>
 		<dependency>
