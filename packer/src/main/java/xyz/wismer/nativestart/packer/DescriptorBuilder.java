@@ -84,12 +84,22 @@ public interface DescriptorBuilder {
 	 * Set the compression to use for the JVM and splash screen resources
 	 * @param algorithm the compression algorithm
 	 * @param level the level of compression, depending on the chosen algorithm
+	 * @return this instance
 	 */
 	DescriptorBuilder compression(CompressionAlgorithm algorithm, int level);
 
 	/**
+	 * Enables or disables recompression of JAR files. The installed JAR files will not be identical due to
+	 * different compression levels or implementations, but the uncompressed content is identical.
+	 * @param recompress whether to recompress the libraries.
+	 * @return this instance
+	 */
+	DescriptorBuilder recompressLibraries(boolean recompress);
+
+	/**
 	 * Set the target descriptor file to generate.
 	 * @param targetFile the target file
+	 * @return this instance
 	 */
 	DescriptorBuilder descriptor(File targetFile);
 

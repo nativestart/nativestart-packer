@@ -66,7 +66,8 @@ public class DemoIT {
 				.jvm(new Component(new File("target/distribution-linux/runtime/"), "runtime/jdk-linux", "runtime/"))
 				.library(new Component(new File("target/packer-demo-1.0.0-SNAPSHOT.jar"), "lib/demo.jar", "lib/demo.jar"))
 				.main("xyz.wismer.nativestart.demo.DemoApp")
-				.systemProperty("java.library.path", "runtime/lib");
+				.systemProperty("java.library.path", "runtime/lib")
+				.recompressLibraries(true);
 
 		builder.generate(tempDir, new URL("http://localhost:8080/"), null);
 

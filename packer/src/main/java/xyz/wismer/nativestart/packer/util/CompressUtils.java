@@ -3,24 +3,34 @@ package xyz.wismer.nativestart.packer.util;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarConstants;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
 import org.apache.commons.compress.compressors.zstandard.ZstdCompressorOutputStream;
-import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.io.IOUtils;
 import xyz.wismer.nativestart.packer.CompressionAlgorithm;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
 
 public class CompressUtils {
 
 	public static void compress(File file, File target, CompressionAlgorithm algorithm, int level) throws IOException {
 		if (file.isFile()) {
 			try (OutputStream cos = compressedStream(Files.newOutputStream(target.toPath()), algorithm, level)) {
-				try (FileInputStream in = new FileInputStream(file)) {
-					IOUtils.copy(in, cos);
+				if (file.getName().endsWith(".jar")) {
+					recompressJar(file, cos);
+				} else {
+					try (FileInputStream in = new FileInputStream(file)) {
+						IOUtils.copy(in, cos);
+					}
 				}
 			}
 		} else if (file.isDirectory()) {
@@ -80,5 +90,25 @@ public class CompressUtils {
 		} else {
 			throw new UnsupportedOperationException(file + " is not supported");
 		}
+	}
+
+	static void recompressJar(File file, OutputStream out) throws IOException {
+		ZipArchiveOutputStream zipStream = new ZipArchiveOutputStream(out);
+		try (ZipFile zipFile = ZipFile.builder().setFile(file).get()) {
+			Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+			while (entries.hasMoreElements()) {
+				ZipArchiveEntry zipEntry = entries.nextElement();
+				final ZipArchiveEntry archiveEntry = new ZipArchiveEntry(zipEntry);
+				archiveEntry.setMethod(ZipEntry.STORED);
+				zipStream.putArchiveEntry(archiveEntry);
+				if (zipEntry.getSize() > 0) {
+					try (InputStream in = zipFile.getInputStream(zipEntry)) {
+						IOUtils.copy(in, zipStream);
+					}
+				}
+				zipStream.closeArchiveEntry();
+			}
+		}
+		zipStream.finish();
 	}
 }

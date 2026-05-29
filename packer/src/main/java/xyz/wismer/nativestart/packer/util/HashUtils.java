@@ -1,18 +1,25 @@
 package xyz.wismer.nativestart.packer.util;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.function.FailableConsumer;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.Blake3Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import xyz.wismer.nativestart.packer.Architecture;
 import xyz.wismer.nativestart.packer.HashAlgorithm;
+import xyz.wismer.nativestart.packer.OperatingSystem;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -24,10 +31,17 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class HashUtils {
 
-	public static Info hash(HashAlgorithm hashAlgorithm, File file) throws IOException {
-		if (file.isFile()) {
+public class HashUtils {
+	private static Path hashUtilExecutable;
+
+	public static Info hash(HashAlgorithm hashAlgorithm, File file, boolean recompressJars) throws IOException {
+		if (recompressJars) {
+			return hashRecompressedJar(out -> {
+				CompressUtils.recompressJar(file, out);
+				out.close();
+			});
+		} else if (file.isFile()) {
 			try (InputStream stream = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
 				return new Info(file.length(), hashStream(hashAlgorithm, stream));
 			}
@@ -44,7 +58,7 @@ public class HashUtils {
 									Files.readSymbolicLink(f).toString().getBytes(StandardCharsets.UTF_8))));
 						} else {
 							size += f.toFile().length();
-							hashes.put(filename, hash(hashAlgorithm, f.toFile()).getHash());
+							hashes.put(filename, hash(hashAlgorithm, f.toFile(), false).getHash());
 						}
 					}
 				}
@@ -54,6 +68,28 @@ public class HashUtils {
 			throw new IOException(file.getAbsolutePath() + " does not exist");
 		}
 		throw new IOException("Only files and directories are supported");
+	}
+
+	private static Info hashRecompressedJar(FailableConsumer<OutputStream, IOException> jarProvider) throws IOException {
+		unpackHashUtilExecutable();
+		Process process = new ProcessBuilder(hashUtilExecutable.toAbsolutePath().toString()).start();
+		jarProvider.accept(process.getOutputStream());
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		IOUtils.copy(process.getInputStream(), out);
+		String[] lines = out.toString().split("\n");
+		return new Info(Long.parseLong(lines[0]), lines[1]);
+	}
+
+	private static synchronized void unpackHashUtilExecutable() throws IOException {
+		if (hashUtilExecutable == null) {
+			OperatingSystem os = OperatingSystem.current();
+			Architecture arch = Architecture.current();
+			Path executable = Files.createTempFile("nativestart", os.getExecutablePostfix());
+			String folder = "/" + os.name().toLowerCase() + "-" + arch.name().toLowerCase();
+			Files.copy(CompressUtils.class.getResourceAsStream(folder + "/checksum"), executable, StandardCopyOption.REPLACE_EXISTING);
+			executable.toFile().setExecutable(true);
+			hashUtilExecutable = executable;
+		}
 	}
 
 	private static String hashStream(HashAlgorithm hashAlgorithm, InputStream input) throws IOException {
