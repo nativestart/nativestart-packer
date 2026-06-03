@@ -64,7 +64,7 @@ public class DemoIT {
 		DescriptorBuilder builder = Packer.descriptorBuilder("Demo", "1.0.0", OperatingSystem.LINUX);
 		builder.splash(new Component(new File("target/test-classes/splash"), "splash/splash", "splash/"))
 				.jvm(new Component(new File("target/distribution-linux/runtime/"), "runtime/jdk-linux", "runtime/"))
-				.library(new Component(new File("target/demo-1.0.0-SNAPSHOT.jar"), "lib/demo.jar", "lib/demo.jar"))
+				.library(new Component(new File("target/packer-demo-1.0.0-SNAPSHOT.jar"), "lib/demo.jar", "lib/demo.jar"))
 				.main("xyz.wismer.nativestart.demo.DemoApp")
 				.systemProperty("java.library.path", "runtime/lib");
 
@@ -85,7 +85,7 @@ public class DemoIT {
 		DescriptorBuilder builder = Packer.descriptorBuilder("Demo", "1.0.0", OperatingSystem.LINUX);
 		builder.splash(new Component(new File("target/test-classes/splash"), "splash/splash", "splash/"))
 				.jvm(new Component(new File("target/distribution-linux/runtime/"), "runtime/jdk-linux", "runtime/"))
-				.library(new Component(new File("target/demo-1.0.0-SNAPSHOT.jar"), "lib/demo.jar", "lib/demo.jar"))
+				.library(new Component(new File("target/packer-demo-1.0.0-SNAPSHOT.jar"), "lib/demo.jar", "lib/demo.jar"))
 				.main("xyz.wismer.nativestart.demo.DemoApp")
 				.systemProperty("java.library.path", "runtime/lib");
 
@@ -114,7 +114,7 @@ public class DemoIT {
 				serveFile(t, tempDir.toPath().resolve("Demo-1.0.0-linux.toml"));
 			}
 			else if (requestPath.equals("/lib/demo.jar")) {
-				serveFile(t, new File("target/demo-1.0.0-SNAPSHOT.jar").toPath());
+				serveFile(t, new File("target/packer-demo-1.0.0-SNAPSHOT.jar").toPath());
 			}
 			else if (Files.exists(tempDir.toPath().resolve(file))) {
 				serveFile(t, tempDir.toPath().resolve(file));
