@@ -126,7 +126,7 @@
 						<configuration>
 							<url>${binaries.baseurl}${binaries.version}/nativestart-mac-x86_64-signed</url>
 							<outputDirectory>${project.build.directory}/native/mac-x86_64</outputDirectory>
-							<outputFileName>signed.app</outputFileName>
+							<outputFileName>signed</outputFileName>
 						</configuration>
 					</execution>
 					<execution>
@@ -138,7 +138,7 @@
 						<configuration>
 							<url>${binaries.baseurl}${binaries.version}/nativestart-mac-x86_64-unsigned</url>
 							<outputDirectory>${project.build.directory}/native/mac-x86_64</outputDirectory>
-							<outputFileName>unsigned.app</outputFileName>
+							<outputFileName>unsigned</outputFileName>
 						</configuration>
 					</execution>
 					<execution>
@@ -150,7 +150,7 @@
 						<configuration>
 							<url>${binaries.baseurl}${binaries.version}/nativestart-mac-aarch64-signed</url>
 							<outputDirectory>${project.build.directory}/native/mac-aarch64</outputDirectory>
-							<outputFileName>signed.app</outputFileName>
+							<outputFileName>signed</outputFileName>
 						</configuration>
 					</execution>
 					<execution>
@@ -162,7 +162,7 @@
 						<configuration>
 							<url>${binaries.baseurl}${binaries.version}/nativestart-mac-aarch64-unsigned</url>
 							<outputDirectory>${project.build.directory}/native/mac-aarch64</outputDirectory>
-							<outputFileName>unsigned.app</outputFileName>
+							<outputFileName>unsigned</outputFileName>
 						</configuration>
 					</execution>
 				</executions>

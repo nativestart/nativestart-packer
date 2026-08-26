@@ -3,7 +3,7 @@ package xyz.wismer.nativestart.packer;
 public enum OperatingSystem {
 	WINDOWS(";", ".exe"),
 	LINUX(":", ""),
-	MAC(":", ".app");
+	MAC(":", "");
 
 	private final String pathSeparator;
 	private final String executablePostfix;
