@@ -17,12 +17,12 @@
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-controls</artifactId>
-			<version>17.0.6</version>
+			<version>17.0.20</version>
 		</dependency>
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-fxml</artifactId>
-			<version>17.0.6</version>
+			<version>17.0.20</version>
 		</dependency>
 
 		<dependency>
@@ -34,7 +34,7 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>
-			<version>5.13.3</version>
+			<version>6.1.3</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -45,7 +45,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.6.0</version>
+				<version>3.6.3</version>
 				<executions>
 					<execution>
 						<goals>
@@ -110,10 +110,10 @@
 			<id>itg-test</id>
 
 			<properties>
-				<jdk.version>17.0.6</jdk.version>
-				<jdk.version.postfix>+10</jdk.version.postfix>
+				<jdk.version>17.0.20.1</jdk.version>
+				<jdk.version.postfix>+1</jdk.version.postfix>
 
-				<javafx.version>17.0.6</javafx.version>
+				<javafx.version>17.0.20</javafx.version>
 
 				<openjfx.download>https://download2.gluonhq.com/openjfx/${javafx.version}/openjfx-${javafx.version}_${jfx.os}-x64_bin-jmods.zip</openjfx.download>
 				<openjfx.subdir>javafx-jmods-${javafx.version}</openjfx.subdir>
@@ -125,7 +125,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-dependency-plugin</artifactId>
-						<version>3.1.1</version>
+						<version>3.11.0</version>
 						<executions>
 							<execution>
 								<id>copy-modules</id>
@@ -145,7 +145,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-shade-plugin</artifactId>
-						<version>3.2.1</version>
+						<version>3.6.2</version>
 						<executions>
 							<execution>
 								<phase>package</phase>
@@ -185,7 +185,7 @@
 					<!-- Step 4: Copy jmod files from OpenJFX SDK (needed by jlink) -->
 					<plugin>
 						<artifactId>maven-resources-plugin</artifactId>
-						<version>2.7</version>
+						<version>3.5.0</version>
 						<executions>
 							<execution>
 								<id>copy-jmods</id>
@@ -283,7 +283,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-failsafe-plugin</artifactId>
-						<version>3.5.3</version>
+						<version>3.5.6</version>
 						<executions>
 							<execution>
 								<goals>
